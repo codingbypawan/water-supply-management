@@ -1,0 +1,579 @@
+📄 SOFTWARE REQUIREMENT DOCUMENT (SRD v2.0)
+Multi-Tenant Water Supply Management SaaS (PWA-Based)
+1️⃣ PROJECT SUMMARY
+1.1 Objective
+
+To build a Multi-Tenant SaaS-based Water Supply Management System with:
+
+Tenant isolation
+
+Plant-level operational control
+
+Configurable online payments
+
+Subscription-based billing
+
+PWA mobile-first experience
+
+Simplified daily distribution
+
+Event booking & reminders
+
+Employee RBAC
+
+Financial tracking
+
+The system must be scalable, secure, configurable, and easy for plant-level daily use.
+
+2️⃣ SYSTEM ARCHITECTURE
+2.1 Multi-Tenant Model
+
+Single backend + single database
+All tables must include:
+
+tenantId
+
+plantId (if applicable)
+
+Strict validation required on every request.
+
+Hierarchy:
+
+Platform
+→ Tenant
+→ Plant
+→ Employees
+→ Customers
+→ Distributions
+→ Events
+→ Payments
+→ Salaries
+→ Subscriptions
+
+3️⃣ USER ROLES
+3.1 Platform Admin
+
+Manage tenants
+
+Manage subscription plans
+
+Activate / Suspend tenant
+
+View revenue
+
+Feature flag control
+
+3.2 Tenant Admin
+
+Manage plants
+
+Configure payment settings
+
+Enable/Disable online payment (tenant level)
+
+View subscription status
+
+View revenue reports
+
+3.3 Plant Admin
+
+Manage customers
+
+Manage employees
+
+Configure plant settings
+
+Enable/Disable online payment (plant level)
+
+Set rates
+
+Approve events
+
+Assign permissions
+
+3.4 Employee
+
+Permission-based operations:
+
+Create customer
+
+Update customer
+
+Distribute water
+
+Collect payment
+
+Approve event
+
+View reports
+
+3.5 Customer
+
+Login via phone/password
+
+View distribution history
+
+View outstanding
+
+Apply for event
+
+Pay online (if enabled)
+
+Receive reminders
+
+4️⃣ CONFIGURATION MANAGEMENT
+4.1 Tenant-Level Configuration
+
+Tenant Admin can configure:
+
+Setting	Description
+Online Payment Enabled	Yes/No
+Allow Event Booking	Yes/No
+Allow Partial Payments	Yes/No
+Default Reminder Time	Configurable
+Enable Salary Module	Yes/No
+Enable Offline Mode	Yes/No
+
+If Tenant disables Online Payment → All plants under tenant cannot use online payment.
+
+4.2 Plant-Level Configuration
+
+Plant Admin can configure:
+
+Setting	Description
+Online Payment Enabled	Yes/No (if tenant allows)
+Distribution Type	Container / Litre
+Active Rate	
+Event Booking Enabled	Yes/No
+Require Event Approval	Yes/No
+Auto Payment Reminder	Yes/No
+
+Online Payment availability =
+Tenant Enabled AND Plant Enabled
+
+5️⃣ SUBSCRIPTION MANAGEMENT (SaaS BILLING)
+5.1 Subscription Plans
+
+Platform Admin defines plans:
+
+Example Plans:
+
+Basic Plan:
+
+1 Plant
+
+Max 1000 customers
+
+No online payment
+
+No event reminder automation
+
+Pro Plan:
+
+Multiple plants
+
+Online payment
+
+PWA notifications
+
+Event reminders
+
+Salary module
+
+Enterprise:
+
+Unlimited plants
+
+All features
+
+Custom integrations
+
+5.2 Subscription Structure
+
+Tables:
+
+subscription_plans
+
+tenant_subscriptions
+
+plant_subscriptions (optional if charging per plant)
+
+5.3 Subscription Rules
+
+Tenant cannot access system if subscription expired.
+
+Grace period configurable.
+
+Feature access controlled via plan.
+
+Online payment feature only available in eligible plans.
+
+5.4 Billing Model Options
+
+Engineer must support:
+
+Option A: Per Tenant Pricing
+Option B: Per Plant Pricing
+Option C: Per Active Customer Pricing
+
+Feature toggles controlled by plan.
+
+6️⃣ CUSTOMER MANAGEMENT
+
+Fields:
+
+Name
+
+Phone (unique within tenant)
+
+Address
+
+Default container count
+
+Outstanding balance
+
+Status
+
+Features:
+
+Search by name or phone
+
+View ledger
+
+View distribution history
+
+View event history
+
+7️⃣ WATER DISTRIBUTION (Ultra Simple Flow)
+
+UI Flow:
+
+Search Customer
+
+Date auto-selected
+
+Enter container/litre count
+
+Auto calculate
+
+Save
+
+No extra steps.
+
+Fields:
+
+quantity
+
+rate
+
+totalAmount
+
+employeeId
+
+paymentStatus
+
+8️⃣ PAYMENT MANAGEMENT
+8.1 Offline Collection
+
+Cash
+
+UPI (manual entry)
+
+Bank
+
+Partial allowed
+Auto outstanding update
+
+8.2 Online Payment
+
+Only if enabled (Tenant + Plant + Plan).
+
+Features:
+
+Customer sees outstanding
+
+Pay partial/full
+
+Payment gateway integration
+
+Webhook validation
+
+Auto update ledger
+
+If disabled:
+
+Payment button hidden.
+
+9️⃣ EVENT MANAGEMENT
+9.1 Customer Application (Simple)
+
+Fields:
+
+Event Date
+
+Container Count
+
+Comment
+
+Address (optional)
+
+Status = Pending
+
+9.2 Approval Flow
+
+Plant Admin / Authorized Employee:
+
+Contact offline
+
+Set rate
+
+Approve
+
+Mark payment status
+
+9.3 Event Status Lifecycle
+
+Pending
+Contacted
+Approved
+Rejected
+Completed
+Cancelled
+
+9.4 Event Reminders (Major Use Case)
+
+System must send:
+
+T-1 Day Reminder
+
+Event Day Morning Reminder
+
+Post Event Payment Reminder
+
+Delivery via:
+
+PWA Push Notification
+
+SMS (future optional)
+
+🔟 EMPLOYEE MANAGEMENT
+
+Fields:
+
+Name
+
+Phone
+
+Role
+
+Salary
+
+Status
+
+Features:
+
+Assign granular permissions
+
+Disable employee
+
+View performance
+
+1️⃣1️⃣ RBAC (Granular Control)
+
+Permissions example:
+
+CREATE_CUSTOMER
+UPDATE_CUSTOMER
+DISTRIBUTE_WATER
+COLLECT_PAYMENT
+APPROVE_EVENT
+VIEW_REPORT
+MANAGE_RATE
+MANAGE_EMPLOYEE
+
+Plant Admin assigns permissions.
+
+1️⃣2️⃣ SALARY MANAGEMENT
+
+Features:
+
+Monthly salary setup
+
+Record payment
+
+Partial allowed
+
+Salary ledger
+
+Pending salary report
+
+1️⃣3️⃣ PWA REQUIREMENTS
+13.1 Core
+
+Installable
+
+Mobile optimized
+
+Offline capability
+
+Push notifications
+
+Background sync
+
+13.2 Offline Mode
+
+Employees must:
+
+Search cached customers
+
+Add distribution
+
+Add payment entry
+
+Auto sync when online
+
+Pending sync indicator required.
+
+13.3 Push Notification Use Cases
+
+Event reminder
+
+Payment reminder
+
+Subscription expiry
+
+Admin announcement
+
+1️⃣4️⃣ REPORTING
+
+Plant Level:
+
+Daily distribution
+
+Collection report
+
+Outstanding summary
+
+Event summary
+
+Employee activity
+
+Tenant Level:
+
+Revenue per plant
+
+Customer growth
+
+Outstanding across plants
+
+Subscription status
+
+Platform Level:
+
+Total active tenants
+
+Revenue
+
+Plan distribution
+
+1️⃣5️⃣ AUDIT LOGS
+
+Track:
+
+Rate change
+
+Permission change
+
+Payment collection
+
+Event approval
+
+Salary payment
+
+Subscription change
+
+1️⃣6️⃣ SECURITY
+
+JWT authentication
+
+Password hashing
+
+Tenant validation middleware
+
+Role middleware
+
+Rate limiting
+
+API logging
+
+1️⃣7️⃣ DATABASE TABLES (Core)
+
+tenants
+plants
+subscription_plans
+tenant_subscriptions
+plant_subscriptions
+users
+employees
+customers
+rates
+distributions
+payments
+events
+salaries
+roles
+permissions
+audit_logs
+notifications
+
+All must contain:
+
+tenantId
+
+createdAt
+
+updatedAt
+
+1️⃣8️⃣ PERFORMANCE REQUIREMENTS
+
+Customer search < 1 sec
+
+Distribution save < 2 sec
+
+Handle 10,000+ customers per tenant
+
+Support 100+ tenants initially
+
+1️⃣9️⃣ FUTURE READY EXTENSIONS
+
+Inventory (containers tracking)
+
+GPS tracking
+
+SMS integration
+
+WhatsApp alerts
+
+PDF invoice
+
+Auto recurring subscription billing
+
+Referral program
+
+FINAL PRODUCT EXPECTATION
+
+System must be:
+
+Extremely simple for daily operations
+
+Configurable per tenant and plant
+
+Subscription-controlled
+
+PWA first
+
+Reminder-focused
+
+Financially accurate
+
+Scalable SaaS ready
