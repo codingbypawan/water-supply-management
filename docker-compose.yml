@@ -55,5 +55,18 @@ services:
     ports:
       - '80:80'
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: wsm-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - '8080:80'
+
 volumes:
   mysql_data:
