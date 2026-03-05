@@ -94,12 +94,12 @@ export default function Distribution() {
         <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Distribution</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="hidden xs:inline">Record</span>
+          Record
         </button>
       </div>
 
@@ -136,6 +136,17 @@ export default function Distribution() {
           </>
         )}
       </div>
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 px-5 py-3.5 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Add Distribution
+      </button>
 
       {showForm && (
         <QuickDistributionForm
@@ -301,7 +312,7 @@ function QuickDistributionForm({ onClose, onSave }) {
           {/* Quantity */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1.5">Quantity (containers)</label>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 max-w-[280px] mx-auto">
               <button type="button"
                 onClick={() => setQuantity(String(Math.max(1, (Number(quantity) || 1) - 1)))}
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex-shrink-0">
@@ -314,7 +325,7 @@ function QuickDistributionForm({ onClose, onSave }) {
                 inputMode="numeric"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="flex-1 min-w-0 text-center text-2xl font-bold py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-20 sm:w-28 text-center text-2xl font-bold py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="0"
               />
               <button type="button"

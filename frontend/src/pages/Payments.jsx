@@ -93,12 +93,12 @@ export default function Payments() {
         <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Payments</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+          className="hidden md:inline-flex items-center gap-1.5 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="hidden xs:inline">Record</span>
+          Record
         </button>
       </div>
 
@@ -135,6 +135,17 @@ export default function Payments() {
           </>
         )}
       </div>
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 px-5 py-3.5 bg-green-600 text-white rounded-full shadow-lg shadow-green-600/30 text-sm font-semibold hover:bg-green-700 active:scale-95 transition-all"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Add Payment
+      </button>
 
       {showForm && (
         <QuickPaymentForm onClose={() => setShowForm(false)} onSave={handleAdd} />
