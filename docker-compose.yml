@@ -37,7 +37,7 @@ services:
       JWT_REFRESH_SECRET: super-secret-refresh-key-change-in-production
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
-      CORS_ORIGINS: http://localhost,http://localhost:3000,http://localhost:80
+      CORS_ORIGINS: ${CORS_ORIGINS}
     ports:
       - '5000:5000'
 

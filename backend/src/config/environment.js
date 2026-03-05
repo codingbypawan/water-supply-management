@@ -20,6 +20,7 @@ module.exports = {
     url: process.env.APP_URL || 'http://localhost:3000',
     apiUrl: process.env.API_URL || 'http://localhost:5000',
   },
+  corsOrigins: process.env.CORS_ORIGINS || 'http://localhost,http://localhost:3000,http://localhost:80',
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000,
     max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,

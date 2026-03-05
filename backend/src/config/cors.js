@@ -2,11 +2,7 @@ const env = require('./environment');
 
 // Build allowed origins list from CORS_ORIGINS env var (comma-separated) or fallback to APP_URL
 const getAllowedOrigins = () => {
-  const corsEnv = process.env.CORS_ORIGINS;
-  if (corsEnv) {
-    return corsEnv.split(',').map((o) => o.trim()).filter(Boolean);
-  }
-  return [env.app.url].filter(Boolean);
+  return env.corsOrigins.split(',').map((o) => o.trim()).filter(Boolean);
 };
 
 const corsOptions = {
