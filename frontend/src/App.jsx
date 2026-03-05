@@ -6,6 +6,7 @@ import { TenantProvider } from './context/TenantContext';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import Sidebar from './components/common/Sidebar';
 import Header from './components/common/Header';
+import OfflineBanner from './components/common/OfflineBanner';
 
 // Pages
 import Login from './pages/Login';
@@ -98,6 +99,7 @@ export default function App() {
     <BrowserRouter>
       <TenantProvider>
         <AuthProvider>
+          <OfflineBanner />
           <Toaster
             position="top-right"
             toastOptions={{

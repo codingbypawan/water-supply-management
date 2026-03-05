@@ -1,9 +1,10 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'wsm-cache-v1';
+const CACHE_NAME = 'wsm-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/manifest.json',
 ];
 
@@ -40,7 +41,7 @@ self.addEventListener('fetch', (event) => {
   // Skip Chrome extension requests
   if (url.protocol === 'chrome-extension:') return;
 
-  // API calls: network-first
+  // API calls: network-first, offline page for navigation-triggered API
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
@@ -78,10 +79,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation: network-first, fallback to cached index.html (SPA)
+  // Navigation: network-first, fallback to cached index.html, then offline page
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html'))
+      fetch(request)
+        .then((response) => {
+          // Cache the page for offline access
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request)
+            .then((cached) => cached || caches.match('/offline.html'))
+        )
     );
     return;
   }
