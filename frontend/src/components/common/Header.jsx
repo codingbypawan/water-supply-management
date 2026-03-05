@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import InstallAppButton from './InstallAppButton';
 
 export default function Header({ title }) {
   const { user } = useAuth();
@@ -9,6 +10,9 @@ export default function Header({ title }) {
       <h1 className="text-lg md:text-xl font-bold text-gray-900 truncate">{title}</h1>
 
       <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+        {/* Install App */}
+        <InstallAppButton className="hidden md:inline-flex" />
+
         {/* Notifications */}
         <button className="relative text-gray-400 hover:text-gray-600 hidden md:block">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

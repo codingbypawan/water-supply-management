@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axios';
+import { updateManifest, updateBrowserMeta } from '../utils/pwa';
 
 const TenantContext = createContext(null);
 
@@ -32,9 +33,25 @@ export function TenantProvider({ children }) {
         applyBranding(tenantData.primary_color, tenantData.secondary_color);
         setBrandingLoaded(true);
 
+        // Update PWA manifest & browser meta for this tenant
+        updateManifest({ tenantId: tenantData.id });
+        updateBrowserMeta({
+          name: tenantData.name,
+          themeColor: tenantData.primary_color,
+          iconUrl: tenantData.logo_url,
+        });
+
         // If only one plant, auto-select
         if (data.data.plants?.length === 1) {
-          setSelectedPlant(data.data.plants[0]);
+          const autoPlant = data.data.plants[0];
+          setSelectedPlant(autoPlant);
+          // Prefer plant-specific PWA branding
+          updateManifest({ plantId: autoPlant.id });
+          updateBrowserMeta({
+            name: autoPlant.name || tenantData.name,
+            themeColor: autoPlant.primary_color || tenantData.primary_color,
+            iconUrl: autoPlant.logo_url || tenantData.logo_url,
+          });
         }
       } else {
         // Fallback: Load all tenants/plants for selection
@@ -67,6 +84,7 @@ export function TenantProvider({ children }) {
               tenantPrimaryColor: t.primary_color,
               tenantSecondaryColor: t.secondary_color,
               tenantTagline: t.tagline,
+              tenantPhone: t.phone,
             });
           });
         });
@@ -109,6 +127,14 @@ export function TenantProvider({ children }) {
     const secondaryColor = plant.secondary_color || plant.tenantSecondaryColor || '#3B82F6';
     applyBranding(primaryColor, secondaryColor);
     setBrandingLoaded(true);
+
+    // Update PWA manifest & browser meta for the selected plant
+    updateManifest({ plantId: plant.id, tenantId: plant.tenantId || plant.tenant_id });
+    updateBrowserMeta({
+      name: plant.name || plant.tenantName || 'Water Supply',
+      themeColor: primaryColor,
+      iconUrl: plant.logo_url || plant.tenantLogo,
+    });
   };
 
   const applyBranding = (primaryColor, secondaryColor) => {
@@ -138,11 +164,26 @@ export function TenantProvider({ children }) {
         setTenant(t);
         applyBranding(t.primary_color, t.secondary_color);
         setBrandingLoaded(true);
+        // Restore PWA branding from stored tenant
+        updateManifest({ tenantId: t.id });
+        updateBrowserMeta({
+          name: t.name,
+          themeColor: t.primary_color,
+          iconUrl: t.logo_url,
+        });
       } catch {}
     }
     if (storedPlant && !selectedPlant) {
       try {
-        setSelectedPlant(JSON.parse(storedPlant));
+        const p = JSON.parse(storedPlant);
+        setSelectedPlant(p);
+        // Prefer plant-specific PWA branding
+        updateManifest({ plantId: p.id, tenantId: p.tenant_id });
+        updateBrowserMeta({
+          name: p.name,
+          themeColor: p.primary_color,
+          iconUrl: p.logo_url,
+        });
       } catch {}
     }
   }, []);

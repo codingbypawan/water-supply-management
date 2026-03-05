@@ -1,5 +1,6 @@
 const router = require('express').Router();
 
+router.use('/pwa', require('./pwa.routes'));
 router.use('/auth', require('./auth.routes'));
 router.use('/tenants', require('./tenant.routes'));
 router.use('/plants', require('./plant.routes'));

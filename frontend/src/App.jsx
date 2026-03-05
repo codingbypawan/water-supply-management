@@ -9,6 +9,7 @@ import Header from './components/common/Header';
 
 // Pages
 import Login from './pages/Login';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
 import Plants from './pages/Plants';
@@ -105,6 +106,7 @@ export default function App() {
             }}
           />
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/*"

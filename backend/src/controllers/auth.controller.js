@@ -261,7 +261,7 @@ exports.getBranding = async (req, res, next) => {
       // Also fetch plants for this tenant
       const plants = await Plant.findAll({
         where: { tenant_id: tenant.id, status: 'active' },
-        attributes: ['id', 'name', 'logo_url', 'tagline', 'primary_color', 'secondary_color'],
+        attributes: ['id', 'name', 'logo_url', 'tagline', 'primary_color', 'secondary_color', 'phone', 'address'],
       });
 
       return ApiResponse.success(res, { tenant, plants }, 'Branding loaded');
@@ -286,7 +286,7 @@ exports.getPlantsList = async (req, res, next) => {
         model: Plant,
         as: 'plants',
         where: { status: 'active' },
-        attributes: ['id', 'name', 'logo_url', 'tagline', 'primary_color', 'secondary_color'],
+        attributes: ['id', 'name', 'logo_url', 'tagline', 'primary_color', 'secondary_color', 'phone', 'address'],
         required: false,
       }],
     });
