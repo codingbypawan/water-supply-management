@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../context/TenantContext';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import InstallAppButton from '../components/common/InstallAppButton';
+import api from '../api/axios';
+import toast from 'react-hot-toast';
 
 export default function LandingPage() {
   const { tenant, selectedPlant, plants, loading, selectPlant } = useTenant();
@@ -203,6 +205,11 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* ─── Event Booking Form ─── */}
+      <div id="book-event" className="max-w-4xl mx-auto w-full px-6 py-10">
+        <EventBookingForm primaryColor={primaryColor} />
+      </div>
+
       {/* ─── Footer ─── */}
       <footer className="mt-auto border-t border-gray-200 bg-white px-6 py-6">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
@@ -210,6 +217,157 @@ export default function LandingPage() {
           <span>Powered by Water Supply SaaS Platform</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ─── Event Booking Form ─── */
+function EventBookingForm({ primaryColor }) {
+  const [form, setForm] = useState({ name: '', phone: '', address: '', event_date: '', event_type: 'wedding', notes: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.phone || !form.event_date) {
+      toast.error('Please fill name, phone and event date');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await api.post('/events/public-book', form);
+      toast.success(res.data?.message || 'Booking submitted!');
+      setSubmitted(true);
+      setForm({ name: '', phone: '', address: '', event_date: '', event_type: 'wedding', notes: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Booking failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
+        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center bg-green-100">
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Booking Submitted!</h3>
+        <p className="text-gray-500 text-sm mb-4">We will contact you shortly to confirm your event and provide pricing details.</p>
+        <button
+          onClick={() => setSubmitted(false)}
+          className="px-6 py-2.5 rounded-lg text-sm font-medium text-white"
+          style={{ backgroundColor: primaryColor }}
+        >
+          Book Another Event
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="p-6 md:p-8" style={{ background: `linear-gradient(135deg, ${primaryColor}10, ${primaryColor}05)` }}>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: primaryColor + '20' }}>
+            <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Book Water for Your Event</h2>
+            <p className="text-sm text-gray-500">Wedding, party, construction or any occasion</p>
+          </div>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="p-6 md:p-8 pt-4 md:pt-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+            <input
+              required
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Full name"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none"
+              style={{ '--tw-ring-color': primaryColor }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
+            <input
+              required
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="10-digit mobile"
+              maxLength={10}
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Event Date *</label>
+            <input
+              required
+              type="date"
+              value={form.event_date}
+              onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+            <select
+              value={form.event_type}
+              onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none"
+            >
+              <option value="wedding">Wedding</option>
+              <option value="party">Party</option>
+              <option value="construction">Construction</option>
+              <option value="commercial">Commercial</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Event Address / Location</label>
+          <input
+            type="text"
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+            placeholder="Where is the event?"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+          <textarea
+            rows={2}
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            placeholder="Any special requirements?"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:border-transparent outline-none resize-none"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-3 rounded-xl text-white font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {submitting ? 'Submitting...' : '📅 Book Event'}
+        </button>
+        <p className="text-xs text-gray-400 text-center">
+          We'll contact you to confirm the booking and event rate
+        </p>
+      </form>
     </div>
   );
 }

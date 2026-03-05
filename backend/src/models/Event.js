@@ -17,7 +17,11 @@ const Event = sequelize.define('Event', {
   },
   customer_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
+  },
+  event_type: {
+    type: DataTypes.STRING(50),
+    defaultValue: 'other',
   },
   event_date: {
     type: DataTypes.DATEONLY,
@@ -25,13 +29,25 @@ const Event = sequelize.define('Event', {
   },
   container_count: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   rate: {
     type: DataTypes.DECIMAL(10, 2),
   },
+  event_rate: {
+    type: DataTypes.DECIMAL(10, 2),
+    comment: 'Flat rate for the entire event',
+  },
   total_amount: {
     type: DataTypes.DECIMAL(10, 2),
+  },
+  customer_name: {
+    type: DataTypes.STRING(255),
+    comment: 'Name submitted via public form (before customer lookup)',
+  },
+  customer_phone: {
+    type: DataTypes.STRING(20),
+    comment: 'Phone submitted via public form',
   },
   address: {
     type: DataTypes.TEXT,

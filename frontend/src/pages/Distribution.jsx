@@ -301,10 +301,10 @@ function QuickDistributionForm({ onClose, onSave }) {
           {/* Quantity */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1.5">Quantity (containers)</label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button type="button"
                 onClick={() => setQuantity(String(Math.max(1, (Number(quantity) || 1) - 1)))}
-                className="w-12 h-12 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex-shrink-0">
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex-shrink-0">
                 −
               </button>
               <input
@@ -314,12 +314,12 @@ function QuickDistributionForm({ onClose, onSave }) {
                 inputMode="numeric"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="flex-1 text-center text-2xl font-bold py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="flex-1 min-w-0 text-center text-2xl font-bold py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="0"
               />
               <button type="button"
                 onClick={() => setQuantity(String((Number(quantity) || 0) + 1))}
-                className="w-12 h-12 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex-shrink-0">
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors flex-shrink-0">
                 +
               </button>
             </div>

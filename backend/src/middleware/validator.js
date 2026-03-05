@@ -74,16 +74,24 @@ const createEventSchema = {
   body: Joi.object({
     customer_id: Joi.string().uuid().required(),
     event_date: Joi.date().required(),
-    container_count: Joi.number().integer().positive().required(),
+    event_type: Joi.string().allow('', null),
+    container_count: Joi.number().integer().positive().allow(null),
+    containers_needed: Joi.number().integer().positive().allow(null),
+    event_rate: Joi.number().positive().allow(null),
+    rate_per_unit: Joi.number().positive().allow(null),
+    rate: Joi.number().positive().allow(null),
     address: Joi.string().allow('', null),
+    location: Joi.string().allow('', null),
     comment: Joi.string().allow('', null),
+    notes: Joi.string().allow('', null),
   }),
 };
 
 const updateEventStatusSchema = {
   body: Joi.object({
     status: Joi.string().valid('pending', 'contacted', 'approved', 'rejected', 'completed', 'cancelled').required(),
-    rate: Joi.number().positive(),
+    rate: Joi.number().positive().allow(null),
+    event_rate: Joi.number().positive().allow(null),
     payment_status: Joi.string().valid('paid', 'unpaid', 'partial'),
   }),
 };

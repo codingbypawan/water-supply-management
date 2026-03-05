@@ -149,11 +149,11 @@ function PlantRateSection() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Plant Default Rate</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 min-w-0 mr-2">Plant Default Rate</h3>
         {!showForm && (
           <button
             onClick={() => { setShowForm(true); setNewRate(currentRate?.rate_per_unit || ''); }}
-            className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+            className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex-shrink-0 whitespace-nowrap"
           >
             {currentRate ? 'Update Rate' : 'Set Rate'}
           </button>

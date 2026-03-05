@@ -199,8 +199,8 @@ function CustomerModal({ customer, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md sm:mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           {customer ? 'Edit Customer' : 'New Customer'}
         </h3>
