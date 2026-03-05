@@ -1,5 +1,14 @@
 const env = require('./environment');
 
+// Build allowed origins list from CORS_ORIGINS env var (comma-separated) or fallback to APP_URL
+const getAllowedOrigins = () => {
+  const corsEnv = process.env.CORS_ORIGINS;
+  if (corsEnv) {
+    return corsEnv.split(',').map((o) => o.trim()).filter(Boolean);
+  }
+  return [env.app.url].filter(Boolean);
+};
+
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -10,16 +19,10 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // In production, allow configured origins and any subdomain
-    const allowedOrigins = [
-      env.app.url,
-      /\.waterapp\.com$/,
-    ];
+    // In production, use CORS_ORIGINS from env (docker-compose) or APP_URL
+    const allowedOrigins = getAllowedOrigins();
 
-    const isAllowed = allowedOrigins.some((allowed) => {
-      if (allowed instanceof RegExp) return allowed.test(origin);
-      return allowed === origin;
-    });
+    const isAllowed = allowedOrigins.some((allowed) => allowed === origin);
 
     if (isAllowed) {
       callback(null, true);
