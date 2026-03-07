@@ -20,7 +20,7 @@ exports.mySummary = async (req, res, next) => {
     const settleDateWhere = {};
     if (startDate && endDate) {
       distDateWhere.distribution_date = { [Op.between]: [startDate, endDate] };
-      payDateWhere.payment_date = { [Op.between]: [startDate, endDate] };
+      payDateWhere.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
       settleDateWhere.settlement_date = { [Op.between]: [startDate, endDate] };
     }
 
@@ -86,7 +86,7 @@ exports.myDetail = async (req, res, next) => {
     const settleDateWhere = {};
     if (startDate && endDate) {
       distDateWhere.distribution_date = { [Op.between]: [startDate, endDate] };
-      payDateWhere.payment_date = { [Op.between]: [startDate, endDate] };
+      payDateWhere.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
       settleDateWhere.settlement_date = { [Op.between]: [startDate, endDate] };
     }
 
@@ -134,7 +134,8 @@ exports.myDetail = async (req, res, next) => {
  */
 exports.listEmployees = async (req, res, next) => {
   try {
-    const where = { tenant_id: req.user.tenantId, role: 'employee', status: 'active' };
+    const where = { role: 'employee', status: 'active' };
+    if (req.user.tenantId) where.tenant_id = req.user.tenantId;
     if (req.user.plantId) where.plant_id = req.user.plantId;
 
     const employees = await User.findAll({
@@ -167,7 +168,8 @@ exports.employeeSummary = async (req, res, next) => {
     }
 
     // Get employees
-    const empWhere = { tenant_id: tenantId, role: 'employee', status: 'active' };
+    const empWhere = { role: 'employee', status: 'active' };
+    if (tenantId) empWhere.tenant_id = tenantId;
     if (plantId) empWhere.plant_id = plantId;
     if (employee_id) empWhere.id = employee_id;
 
@@ -185,7 +187,8 @@ exports.employeeSummary = async (req, res, next) => {
       const employeeId = empRecord ? empRecord.id : null;
 
       // Distributions by this employee
-      const distWhere = { tenant_id: tenantId };
+      const distWhere = {};
+      if (tenantId) distWhere.tenant_id = tenantId;
       if (employeeId) distWhere.employee_id = employeeId;
       else distWhere.employee_id = null; // skip if no employee record — no distributions
       if (startDate && endDate) distWhere.distribution_date = { [Op.between]: [startDate, endDate] };
@@ -205,8 +208,9 @@ exports.employeeSummary = async (req, res, next) => {
       }
 
       // Payments collected by this employee
-      const payWhere = { tenant_id: tenantId, collected_by: emp.id, status: 'completed' };
-      if (startDate && endDate) payWhere.payment_date = { [Op.between]: [startDate, endDate] };
+      const payWhere = { collected_by: emp.id, status: 'completed' };
+      if (tenantId) payWhere.tenant_id = tenantId;
+      if (startDate && endDate) payWhere.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
 
       const payments = await Payment.findAll({
         where: payWhere,
@@ -218,7 +222,8 @@ exports.employeeSummary = async (req, res, next) => {
         .reduce((s, p) => s + parseFloat(p.amount), 0);
 
       // Settlements (money given to admin)
-      const settleWhere = { tenant_id: tenantId, employee_user_id: emp.id };
+      const settleWhere = { employee_user_id: emp.id };
+      if (tenantId) settleWhere.tenant_id = tenantId;
       if (startDate && endDate) settleWhere.settlement_date = { [Op.between]: [startDate, endDate] };
 
       const settlements = await EmployeeSettlement.findAll({
@@ -264,8 +269,10 @@ exports.employeeDetail = async (req, res, next) => {
     const { startDate, endDate } = req.query;
     const tenantId = req.user.tenantId;
 
+    const empFindWhere = { id: employeeId };
+    if (tenantId) empFindWhere.tenant_id = tenantId;
     const emp = await User.findOne({
-      where: { id: employeeId, tenant_id: tenantId },
+      where: empFindWhere,
       attributes: ['id', 'name', 'phone'],
     });
     if (!emp) return ApiResponse.notFound(res, 'Employee not found');
@@ -273,7 +280,8 @@ exports.employeeDetail = async (req, res, next) => {
     const empRecord = await Employee.findOne({ where: { user_id: emp.id } });
 
     // Distributions
-    const distWhere = { tenant_id: tenantId };
+    const distWhere = {};
+    if (tenantId) distWhere.tenant_id = tenantId;
     if (empRecord) distWhere.employee_id = empRecord.id;
     else distWhere.employee_id = null;
     if (startDate && endDate) distWhere.distribution_date = { [Op.between]: [startDate, endDate] };
@@ -285,8 +293,9 @@ exports.employeeDetail = async (req, res, next) => {
     }) : [];
 
     // Collections
-    const payWhere = { tenant_id: tenantId, collected_by: emp.id, status: 'completed' };
-    if (startDate && endDate) payWhere.payment_date = { [Op.between]: [startDate, endDate] };
+    const payWhere = { collected_by: emp.id, status: 'completed' };
+    if (tenantId) payWhere.tenant_id = tenantId;
+    if (startDate && endDate) payWhere.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
 
     const payments = await Payment.findAll({
       where: payWhere,
@@ -295,7 +304,8 @@ exports.employeeDetail = async (req, res, next) => {
     });
 
     // Settlements
-    const settleWhere = { tenant_id: tenantId, employee_user_id: emp.id };
+    const settleWhere = { employee_user_id: emp.id };
+    if (tenantId) settleWhere.tenant_id = tenantId;
     if (startDate && endDate) settleWhere.settlement_date = { [Op.between]: [startDate, endDate] };
 
     const settlements = await EmployeeSettlement.findAll({

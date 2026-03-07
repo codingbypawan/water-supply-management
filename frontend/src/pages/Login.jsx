@@ -27,6 +27,7 @@ export default function Login() {
 
   // No tenant detected from domain — show plant selector
   const showPlantSelector = !tenant?.id;
+  const [showAdminLogin, setShowAdminLogin] = React.useState(false);
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -35,15 +36,37 @@ export default function Login() {
 
       {/* Right — Form area */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
-        {showPlantSelector ? (
-          <PlantSelector
-            plants={plants}
-            onSelect={(plant) => selectPlant(plant)}
-          />
+        {showPlantSelector && !showAdminLogin ? (
+          <div className="w-full">
+            <PlantSelector
+              plants={plants}
+              onSelect={(plant) => selectPlant(plant)}
+            />
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setShowAdminLogin(true)}
+                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Platform Admin Login
+              </button>
+            </div>
+          </div>
         ) : (
-          <LoginForm
-            onSuccess={() => navigate('/dashboard', { replace: true })}
-          />
+          <div className="w-full">
+            <LoginForm
+              onSuccess={() => navigate('/dashboard', { replace: true })}
+            />
+            {showAdminLogin && (
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setShowAdminLogin(false)}
+                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  ← Back to plant selection
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

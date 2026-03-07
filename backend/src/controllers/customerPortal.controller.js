@@ -111,7 +111,7 @@ exports.myPayments = async (req, res, next) => {
     const where = { customer_id: customer.id, status: 'completed' };
 
     if (startDate && endDate) {
-      where.payment_date = { [Op.between]: [startDate, endDate] };
+      where.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
     }
 
     const { count, rows } = await Payment.findAndCountAll({

@@ -172,6 +172,7 @@ function PlatformAdminDashboard({ user }) {
 function PlantDashboard({ user }) {
   const [stats, setStats] = useState({});
   const [recentDistributions, setRecentDistributions] = useState([]);
+  const [employeeSummaries, setEmployeeSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -181,16 +182,17 @@ function PlantDashboard({ user }) {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [custRes, distRes, collectRes, outRes] = await Promise.allSettled([
+      const [custRes, distRes, collectRes, outRes, empRes] = await Promise.allSettled([
         api.get('/customers?limit=1'),
         api.get('/reports/daily-distribution'),
         api.get('/reports/collection'),
         api.get('/reports/outstanding'),
+        api.get('/employee-reports/summary'),
       ]);
 
       setStats({
         totalCustomers: custRes.status === 'fulfilled' ? custRes.value.data?.pagination?.total || 0 : 0,
-        todayDistributions: distRes.status === 'fulfilled' ? distRes.value.data?.data?.summary?.totalContainers || 0 : 0,
+        todayDistributions: distRes.status === 'fulfilled' ? distRes.value.data?.data?.summary?.total || 0 : 0,
         todayCollections: collectRes.status === 'fulfilled'
           ? `₹${collectRes.value.data?.data?.summary?.totalCollected || 0}`
           : '₹0',
@@ -198,6 +200,11 @@ function PlantDashboard({ user }) {
           ? `₹${outRes.value.data?.data?.totalOutstanding || 0}`
           : '₹0',
       });
+
+      if (empRes.status === 'fulfilled') {
+        const data = empRes.value.data?.data;
+        setEmployeeSummaries(Array.isArray(data) ? data : data?.employees || []);
+      }
 
       try {
         const res = await api.get('/distributions?limit=5');
@@ -240,6 +247,44 @@ function PlantDashboard({ user }) {
           </div>
         ))}
       </div>
+
+      {/* Employee Cash in Hand */}
+      {employeeSummaries.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
+          <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Employee Cash in Hand</h3>
+          <div className="divide-y divide-gray-100">
+            {employeeSummaries.filter(e => e.cashWithEmployee > 0).length === 0 ? (
+              <p className="text-gray-400 text-sm py-2">No pending cash with employees</p>
+            ) : (
+              employeeSummaries.filter(e => e.cashWithEmployee > 0).map((emp) => (
+                <div key={emp.employee.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm flex-shrink-0">
+                      {emp.employee.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{emp.employee.name}</p>
+                      <p className="text-xs text-gray-400">{emp.employee.phone}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-orange-600 text-sm">₹{Number(emp.cashWithEmployee).toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-400">Collected ₹{Number(emp.collections?.cashCollected || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {employeeSummaries.filter(e => e.cashWithEmployee > 0).length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-500">Total Cash with Employees</span>
+              <span className="text-sm font-bold text-orange-600">
+                ₹{employeeSummaries.reduce((sum, e) => sum + (e.cashWithEmployee || 0), 0).toLocaleString()}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
         <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Recent Distributions</h3>

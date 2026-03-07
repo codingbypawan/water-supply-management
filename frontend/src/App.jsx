@@ -24,6 +24,7 @@ import Settings from './pages/Settings';
 import Users from './pages/Users';
 import Subscriptions from './pages/Subscriptions';
 import Salaries from './pages/Salaries';
+import Attendance from './pages/Attendance';
 import CustomerDashboard from './pages/CustomerDashboard';
 
 const PAGE_TITLES = {
@@ -40,6 +41,7 @@ const PAGE_TITLES = {
   '/users': 'Users',
   '/subscriptions': 'Subscriptions',
   '/salaries': 'Salaries',
+  '/attendance': 'Attendance',
 };
 
 function ProtectedRoute({ children }) {
@@ -82,6 +84,7 @@ function AppLayout() {
             <Route path="/events" element={<Events />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/salaries" element={<Salaries />} />
+            <Route path="/attendance" element={<Attendance />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/users" element={<Users />} />

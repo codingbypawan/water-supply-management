@@ -7,7 +7,8 @@ exports.dailyDistribution = async (req, res, next) => {
     const { date, plantId } = req.query;
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    const where = { tenant_id: req.user.tenantId, distribution_date: targetDate };
+    const where = { distribution_date: targetDate };
+    if (req.user.tenantId) where.tenant_id = req.user.tenantId;
     if (plantId) where.plant_id = plantId;
     else if (req.user.plantId) where.plant_id = req.user.plantId;
 
@@ -35,11 +36,12 @@ exports.dailyDistribution = async (req, res, next) => {
 exports.collection = async (req, res, next) => {
   try {
     const { startDate, endDate, plantId } = req.query;
-    const where = { tenant_id: req.user.tenantId, status: 'completed' };
+    const where = { status: 'completed' };
+    if (req.user.tenantId) where.tenant_id = req.user.tenantId;
     if (plantId) where.plant_id = plantId;
     else if (req.user.plantId) where.plant_id = req.user.plantId;
     if (startDate && endDate) {
-      where.payment_date = { [Op.between]: [startDate, endDate] };
+      where.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
     }
 
     const payments = await Payment.findAll({
@@ -67,7 +69,8 @@ exports.collection = async (req, res, next) => {
 
 exports.outstanding = async (req, res, next) => {
   try {
-    const where = { tenant_id: req.user.tenantId, outstanding_balance: { [Op.gt]: 0 } };
+    const where = { outstanding_balance: { [Op.gt]: 0 } };
+    if (req.user.tenantId) where.tenant_id = req.user.tenantId;
     if (req.user.plantId) where.plant_id = req.user.plantId;
 
     const customers = await Customer.findAll({
@@ -87,9 +90,10 @@ exports.outstanding = async (req, res, next) => {
 exports.revenue = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
-    const where = { tenant_id: req.user.tenantId, status: 'completed' };
+    const where = { status: 'completed' };
+    if (req.user.tenantId) where.tenant_id = req.user.tenantId;
     if (startDate && endDate) {
-      where.payment_date = { [Op.between]: [startDate, endDate] };
+      where.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
     }
 
     const payments = await Payment.findAll({ where });

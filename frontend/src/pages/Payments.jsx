@@ -2,8 +2,10 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../api/axios';
 import DataTable from '../components/common/DataTable';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 export default function Payments() {
+  const { user } = useAuth();
   const [payments, setPayments] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,7 @@ export default function Payments() {
       </button>
 
       {showForm && (
-        <QuickPaymentForm onClose={() => setShowForm(false)} onSave={handleAdd} />
+        <QuickPaymentForm onClose={() => setShowForm(false)} onSave={handleAdd} userRole={user?.role} />
       )}
     </div>
   );
@@ -164,7 +166,7 @@ const PAYMENT_METHODS = [
   { key: 'online', label: 'Online', icon: '🌐' },
 ];
 
-function QuickPaymentForm({ onClose, onSave }) {
+function QuickPaymentForm({ onClose, onSave, userRole }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -172,11 +174,23 @@ function QuickPaymentForm({ onClose, onSave }) {
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('cash');
   const [saving, setSaving] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [collectedBy, setCollectedBy] = useState('');
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
 
+  const isAdmin = ['plant_admin', 'tenant_admin', 'platform_admin'].includes(userRole);
+
   // Focus search on open
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  // Load employees for admin
+  useEffect(() => {
+    if (!isAdmin) return;
+    api.get('/employees')
+      .then(res => setEmployees(Array.isArray(res.data?.data) ? res.data.data : []))
+      .catch(() => {});
+  }, [isAdmin]);
 
   const searchCustomers = useCallback(async (q) => {
     if (!q || q.length < 2) { setResults([]); return; }
@@ -214,11 +228,13 @@ function QuickPaymentForm({ onClose, onSave }) {
     if (!selectedCustomer) return toast.error('Select a customer');
     if (!amount || Number(amount) <= 0) return toast.error('Enter amount');
     setSaving(true);
-    await onSave({
+    const formData = {
       customer_id: selectedCustomer.id,
       amount: Number(amount),
       payment_method: method,
-    });
+    };
+    if (collectedBy) formData.collected_by = collectedBy;
+    await onSave(formData);
     setSaving(false);
   };
 
@@ -359,6 +375,25 @@ function QuickPaymentForm({ onClose, onSave }) {
               ))}
             </div>
           </div>
+
+          {/* Collected By Employee (admin only) */}
+          {isAdmin && employees.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1.5">Collected By</label>
+              <select
+                value={collectedBy}
+                onChange={(e) => setCollectedBy(e.target.value)}
+                className="w-full py-3 px-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white"
+              >
+                <option value="">Self (me)</option>
+                {employees.map((emp) => (
+                  <option key={emp.user_id} value={emp.user_id}>
+                    {emp.name} — {emp.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Date (auto today) */}
           <p className="text-xs text-gray-400 text-center">

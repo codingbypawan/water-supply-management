@@ -11,6 +11,8 @@ router.get('/tenant/:tenantId?', subscriptionController.getTenantSubscription);
 
 // Platform admin only
 router.post('/plans', requireRole(ROLES.PLATFORM_ADMIN), subscriptionController.createPlan);
+router.put('/plans/:id', requireRole(ROLES.PLATFORM_ADMIN), subscriptionController.updatePlan);
 router.post('/subscribe', requireRole(ROLES.PLATFORM_ADMIN), subscriptionController.subscribeTenant);
+router.put('/:id', requireRole(ROLES.PLATFORM_ADMIN), subscriptionController.updateSubscription);
 
 module.exports = router;

@@ -26,18 +26,25 @@ exports.login = async (req, res, next) => {
     // Determine tenant - from middleware or body
     const effectiveTenantId = req.tenantId || tenantId;
 
-    if (!effectiveTenantId) {
-      return ApiResponse.badRequest(res, 'Tenant could not be determined. Please select a plant.');
-    }
-
-    // Find user
-    const user = await User.findOne({
-      where: {
-        phone,
-        tenant_id: effectiveTenantId,
-        status: 'active',
-      },
+    // Try platform_admin login first (no tenant required)
+    let user = await User.findOne({
+      where: { phone, role: 'platform_admin', status: 'active' },
     });
+
+    if (!user) {
+      // For non-platform_admin, tenant is required
+      if (!effectiveTenantId) {
+        return ApiResponse.badRequest(res, 'Tenant could not be determined. Please select a plant.');
+      }
+
+      user = await User.findOne({
+        where: {
+          phone,
+          tenant_id: effectiveTenantId,
+          status: 'active',
+        },
+      });
+    }
 
     if (!user) {
       return ApiResponse.unauthorized(res, 'Invalid phone number or password');
@@ -50,7 +57,7 @@ exports.login = async (req, res, next) => {
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user.id, effectiveTenantId, user.role);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.tenant_id, user.role);
 
     // Save refresh token
     user.refresh_token = refreshToken;
@@ -58,7 +65,7 @@ exports.login = async (req, res, next) => {
     await user.save();
 
     // Get tenant branding
-    const tenant = await Tenant.findByPk(effectiveTenantId);
+    const tenant = user.tenant_id ? await Tenant.findByPk(user.tenant_id) : null;
 
     // Get plant info if applicable
     let plant = null;

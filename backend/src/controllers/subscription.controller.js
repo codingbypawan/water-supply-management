@@ -55,3 +55,34 @@ exports.getTenantSubscription = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.updatePlan = async (req, res, next) => {
+  try {
+    const plan = await SubscriptionPlan.findByPk(req.params.id);
+    if (!plan) return ApiResponse.notFound(res, 'Plan not found');
+
+    await plan.update(req.body);
+    return ApiResponse.success(res, plan, 'Plan updated');
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateSubscription = async (req, res, next) => {
+  try {
+    const subscription = await TenantSubscription.findByPk(req.params.id);
+    if (!subscription) return ApiResponse.notFound(res, 'Subscription not found');
+
+    const { plan_id, start_date, end_date, status } = req.body;
+    const updates = {};
+    if (plan_id) updates.plan_id = plan_id;
+    if (start_date) updates.start_date = start_date;
+    if (end_date) updates.end_date = end_date;
+    if (status) updates.status = status;
+
+    await subscription.update(updates);
+    return ApiResponse.success(res, subscription, 'Subscription updated');
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import api from '../api/axios';
 import { updateManifest, updateBrowserMeta } from '../utils/pwa';
 
@@ -10,9 +10,47 @@ export function TenantProvider({ children }) {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [brandingLoaded, setBrandingLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const brandingFetched = useRef(false);
 
-  // Resolve branding from domain on mount
+  // Restore from localStorage first, then fetch branding
   useEffect(() => {
+    // Restore cached tenant/plant synchronously to avoid flash
+    const storedTenant = localStorage.getItem('tenant');
+    const storedPlant = localStorage.getItem('plant');
+    if (storedTenant) {
+      try {
+        const t = JSON.parse(storedTenant);
+        setTenant(t);
+        applyBranding(t.primary_color, t.secondary_color);
+        setBrandingLoaded(true);
+        updateManifest({ tenantId: t.id });
+        updateBrowserMeta({
+          name: t.name,
+          themeColor: t.primary_color,
+          iconUrl: t.logo_url,
+        });
+      } catch {}
+    }
+    if (storedPlant) {
+      try {
+        const p = JSON.parse(storedPlant);
+        setSelectedPlant(p);
+        updateManifest({ plantId: p.id, tenantId: p.tenant_id });
+        updateBrowserMeta({
+          name: p.name,
+          themeColor: p.primary_color,
+          iconUrl: p.logo_url,
+        });
+      } catch {}
+    }
+
+    // Fetch branding from API (only once)
+    if (brandingFetched.current) {
+      setLoading(false);
+      return;
+    }
+    brandingFetched.current = true;
+
     resolveBranding();
   }, []);
 
@@ -21,15 +59,17 @@ export function TenantProvider({ children }) {
       setLoading(true);
       const hostname = window.location.hostname;
 
-      // Try domain-based resolution
+      // Use skipAuth to avoid sending stale tokens on public endpoint
       const { data } = await api.get('/auth/branding', {
         params: { domain: hostname },
+        skipAuth: true,
       });
 
       if (data.success && data.data.tenant) {
         const tenantData = data.data.tenant;
         setTenant(tenantData);
         setPlants(data.data.plants || []);
+        localStorage.setItem('tenantId', tenantData.id);
         applyBranding(tenantData.primary_color, tenantData.secondary_color);
         setBrandingLoaded(true);
 
@@ -65,9 +105,9 @@ export function TenantProvider({ children }) {
     }
   };
 
-  const loadAllPlants = async () => {
+  const loadAllPlants = useCallback(async () => {
     try {
-      const { data } = await api.get('/auth/plants');
+      const { data } = await api.get('/auth/plants', { skipAuth: true });
       if (data.success) {
         // Flatten plants from all tenants
         const allPlants = [];
@@ -94,9 +134,9 @@ export function TenantProvider({ children }) {
     } catch (error) {
       console.error('Failed to load plants:', error);
     }
-  };
+  }, []);
 
-  const resetTenant = () => {
+  const resetTenant = useCallback(() => {
     setTenant(null);
     setSelectedPlant(null);
     setPlants([]);
@@ -104,9 +144,9 @@ export function TenantProvider({ children }) {
     document.documentElement.style.setProperty('--brand-primary', '#1E40AF');
     document.documentElement.style.setProperty('--brand-secondary', '#3B82F6');
     document.documentElement.style.setProperty('--brand-light', 'rgba(59, 130, 246, 0.1)');
-  };
+  }, []);
 
-  const selectPlant = (plant) => {
+  const selectPlant = useCallback((plant) => {
     setSelectedPlant(plant);
 
     // If plant has tenant context (from fallback), set it
@@ -135,7 +175,7 @@ export function TenantProvider({ children }) {
       themeColor: primaryColor,
       iconUrl: plant.logo_url || plant.tenantLogo,
     });
-  };
+  }, []);
 
   const applyBranding = (primaryColor, secondaryColor) => {
     document.documentElement.style.setProperty('--brand-primary', primaryColor || '#1E40AF');
@@ -154,52 +194,20 @@ export function TenantProvider({ children }) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  // Also restore from localStorage
-  useEffect(() => {
-    const storedTenant = localStorage.getItem('tenant');
-    const storedPlant = localStorage.getItem('plant');
-    if (storedTenant && !tenant) {
-      try {
-        const t = JSON.parse(storedTenant);
-        setTenant(t);
-        applyBranding(t.primary_color, t.secondary_color);
-        setBrandingLoaded(true);
-        // Restore PWA branding from stored tenant
-        updateManifest({ tenantId: t.id });
-        updateBrowserMeta({
-          name: t.name,
-          themeColor: t.primary_color,
-          iconUrl: t.logo_url,
-        });
-      } catch {}
-    }
-    if (storedPlant && !selectedPlant) {
-      try {
-        const p = JSON.parse(storedPlant);
-        setSelectedPlant(p);
-        // Prefer plant-specific PWA branding
-        updateManifest({ plantId: p.id, tenantId: p.tenant_id });
-        updateBrowserMeta({
-          name: p.name,
-          themeColor: p.primary_color,
-          iconUrl: p.logo_url,
-        });
-      } catch {}
-    }
-  }, []);
+  const contextValue = React.useMemo(() => ({
+    tenant,
+    plants,
+    selectedPlant,
+    selectPlant,
+    resetTenant,
+    loadAllPlants,
+    brandingLoaded,
+    loading,
+    setTenant,
+  }), [tenant, plants, selectedPlant, selectPlant, resetTenant, loadAllPlants, brandingLoaded, loading]);
 
   return (
-    <TenantContext.Provider value={{
-      tenant,
-      plants,
-      selectedPlant,
-      selectPlant,
-      resetTenant,
-      loadAllPlants,
-      brandingLoaded,
-      loading,
-      setTenant,
-    }}>
+    <TenantContext.Provider value={contextValue}>
       {children}
     </TenantContext.Provider>
   );

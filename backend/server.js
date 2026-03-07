@@ -2,6 +2,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const { sequelize } = require('./src/models');
 const env = require('./src/config/environment');
+const { startEventNotificationCron } = require('./src/utils/eventNotificationCron');
 
 const PORT = env.port;
 
@@ -14,6 +15,9 @@ async function start() {
     // Sync models (create tables if not exist)
     await sequelize.sync({ alter: env.nodeEnv === 'development' });
     console.log('✅ Database synced');
+
+    // Start push notification cron jobs
+    startEventNotificationCron();
 
     // Start server
     app.listen(PORT, () => {

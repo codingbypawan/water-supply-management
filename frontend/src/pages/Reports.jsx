@@ -3,7 +3,7 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 
 export default function Reports() {
-  const [activeTab, setActiveTab] = useState('distribution');
+  const [activeTab, setActiveTab] = useState('employees');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState({
@@ -12,11 +12,11 @@ export default function Reports() {
   });
 
   const tabs = [
+    { key: 'employees', label: 'Employees' },
     { key: 'distribution', label: 'Distribution' },
     { key: 'collection', label: 'Collection' },
     { key: 'outstanding', label: 'Outstanding' },
     { key: 'revenue', label: 'Revenue' },
-    { key: 'employees', label: 'Employees' },
   ];
 
   const loadReport = async () => {
@@ -45,13 +45,27 @@ export default function Reports() {
     <div className="space-y-4 md:space-y-6">
       <h2 className="text-xl md:text-2xl font-bold text-gray-900">Reports</h2>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+      {/* Mobile: Dropdown */}
+      <div className="md:hidden">
+        <select
+          value={activeTab}
+          onChange={(e) => setActiveTab(e.target.value)}
+          className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-medium text-gray-700 focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none appearance-none"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
+        >
+          {tabs.map((tab) => (
+            <option key={tab.key} value={tab.key}>{tab.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Desktop: Tab bar */}
+      <div className="hidden md:flex gap-1 bg-gray-100 p-1 rounded-xl">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.key
                 ? 'bg-white text-brand-primary shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'

@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: 'Events', path: '/events', icon: 'calendar', roles: ['plant_admin', 'employee'], mobile: false },
   { label: 'Employees', path: '/employees', icon: 'people', roles: ['plant_admin', 'tenant_admin'], mobile: false },
   { label: 'Salaries', path: '/salaries', icon: 'wallet', roles: ['plant_admin', 'tenant_admin'], mobile: false },
+  { label: 'Attendance', path: '/attendance', icon: 'clipboard', roles: ['plant_admin', 'tenant_admin', 'employee'], mobile: false },
   { label: 'Reports', path: '/reports', icon: 'chart', roles: ['plant_admin', 'tenant_admin', 'platform_admin'], mobile: false },
   { label: 'Settings', path: '/settings', icon: 'cog', roles: ['plant_admin', 'tenant_admin', 'platform_admin', 'employee'], mobile: false },
 ];
@@ -57,6 +58,9 @@ const ICONS = {
   ),
   wallet: (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+  ),
+  clipboard: (
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
   ),
 };
 
@@ -134,7 +138,7 @@ export default function Sidebar({ currentPath }) {
         {/* User / Logout */}
         <div className="p-3 border-t border-gray-200">
           <button
-            onClick={() => { logout(); navigate('/login'); }}
+            onClick={async () => { await logout(); navigate('/login'); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
             title={collapsed ? 'Logout' : undefined}
           >
@@ -225,7 +229,7 @@ export default function Sidebar({ currentPath }) {
               })}
               <div className="border-t border-gray-100 mt-2 pt-2">
                 <button
-                  onClick={() => { logout(); navigate('/login'); }}
+                  onClick={async () => { await logout(); navigate('/login'); }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
                 >
                   <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

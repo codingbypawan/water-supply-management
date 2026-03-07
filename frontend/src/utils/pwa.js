@@ -148,3 +148,113 @@ export function isInstalledPWA() {
     window.navigator.standalone === true
   );
 }
+
+/**
+ * Subscribe the user to push notifications.
+ * Fetches the VAPID public key, subscribes via the service worker,
+ * and sends the subscription to the backend.
+ */
+export async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn('Push notifications not supported');
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn('Push notification permission denied');
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    // Get VAPID public key from backend
+    const res = await fetch(`${API_URL}/pwa/vapid-public-key`);
+    const { data } = await res.json();
+    if (!data?.publicKey) {
+      console.error('VAPID public key not available');
+      return false;
+    }
+
+    // Convert VAPID key to Uint8Array
+    const applicationServerKey = urlBase64ToUint8Array(data.publicKey);
+
+    // Subscribe
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
+    });
+
+    // Send subscription to backend
+    const token = localStorage.getItem('accessToken');
+    await fetch(`${API_URL}/pwa/push-subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ subscription }),
+    });
+
+    console.log('Push notification subscription saved');
+    return true;
+  } catch (error) {
+    console.error('Push subscription failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Unsubscribe from push notifications.
+ */
+export async function unsubscribeFromPush() {
+  try {
+    if (!('serviceWorker' in navigator)) return false;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return false;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      await subscription.unsubscribe();
+    }
+
+    const token = localStorage.getItem('accessToken');
+    await fetch(`${API_URL}/pwa/push-unsubscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Push unsubscribe failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if user is currently subscribed to push.
+ */
+export async function isPushSubscribed() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    return !!subscription;
+  } catch {
+    return false;
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}

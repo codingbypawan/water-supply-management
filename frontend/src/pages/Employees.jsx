@@ -61,7 +61,7 @@ export default function Employees() {
     { key: 'name', label: 'Name' },
     { key: 'phone', label: 'Phone' },
     { key: 'role', label: 'Role', render: (val) => <span className="capitalize">{val?.replace('_', ' ')}</span> },
-    { key: 'salary_amount', label: 'Salary', render: (val) => val ? `₹${Number(val).toLocaleString()}` : '—' },
+    { key: 'salary', label: 'Salary', render: (val) => val ? `₹${Number(val).toLocaleString()}` : '—' },
     {
       key: 'status',
       label: 'Status',
@@ -113,7 +113,7 @@ export default function Employees() {
               </div>
               <div className="text-right flex-shrink-0 ml-3">
                 <span className="capitalize text-xs text-gray-600">{row.role?.replace('_',' ')}</span>
-                {row.salary_amount && <p className="text-xs font-semibold text-gray-900">₹{Number(row.salary_amount).toLocaleString()}</p>}
+                {row.salary && <p className="text-xs font-semibold text-gray-900">₹{Number(row.salary).toLocaleString()}</p>}
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   row.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                 }`}>{row.status}</span>
@@ -155,7 +155,7 @@ function EmployeeModal({ employee, onClose, onSave }) {
     name: employee?.name || '',
     phone: employee?.phone || '',
     role: employee?.role || 'employee',
-    salary_amount: employee?.salary_amount || employee?.salary || '',
+    salary: employee?.salary || '',
     address: employee?.address || '',
     permissions: employee?.permissions || [],
   });
@@ -205,7 +205,7 @@ function EmployeeModal({ employee, onClose, onSave }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
-              <input type="number" value={form.salary_amount} onChange={(e) => setForm({ ...form, salary_amount: e.target.value })}
+              <input type="number" value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm" />
             </div>
             <div>

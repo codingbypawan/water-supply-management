@@ -19,8 +19,12 @@ export default function Subscriptions() {
   const [loading, setLoading] = useState(true);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showEditSubModal, setShowEditSubModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [editingSub, setEditingSub] = useState(null);
   const [planForm, setPlanForm] = useState(EMPTY_PLAN);
   const [assignForm, setAssignForm] = useState({ tenant_id: '', plan_id: '', start_date: '', end_date: '' });
+  const [editSubForm, setEditSubForm] = useState({ plan_id: '', start_date: '', end_date: '', status: '' });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -58,17 +62,23 @@ export default function Subscriptions() {
         price_yearly: planForm.price_yearly ? parseFloat(planForm.price_yearly) : null,
         max_plants: parseInt(planForm.max_plants, 10),
         max_customers_per_plant: parseInt(planForm.max_customers_per_plant, 10),
-        features: planForm.features
+        features: typeof planForm.features === 'string'
           ? planForm.features.split(',').map((f) => f.trim()).filter(Boolean)
-          : [],
+          : planForm.features,
       };
-      await api.post('/subscriptions/plans', payload);
-      toast.success('Plan created');
+      if (editingPlan) {
+        await api.put(`/subscriptions/plans/${editingPlan.id}`, payload);
+        toast.success('Plan updated');
+      } else {
+        await api.post('/subscriptions/plans', payload);
+        toast.success('Plan created');
+      }
       setShowPlanModal(false);
       setPlanForm(EMPTY_PLAN);
+      setEditingPlan(null);
       load();
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Failed to create plan');
+      toast.error(err.response?.data?.error?.message || 'Failed to save plan');
     } finally {
       setSaving(false);
     }
@@ -88,6 +98,50 @@ export default function Subscriptions() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEditSub = (tenant) => {
+    const sub = getTenantSub(tenant);
+    if (!sub) return;
+    setEditingSub({ ...sub, tenantName: tenant.name });
+    setEditSubForm({
+      plan_id: sub.plan_id || sub.plan?.id || '',
+      start_date: sub.start_date || '',
+      end_date: sub.end_date || '',
+      status: sub.status || 'active',
+    });
+    setShowEditSubModal(true);
+  };
+
+  const handleUpdateSub = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.put(`/subscriptions/${editingSub.id}`, editSubForm);
+      toast.success('Subscription updated');
+      setShowEditSubModal(false);
+      setEditingSub(null);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Failed to update subscription');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEditPlan = (plan) => {
+    setEditingPlan(plan);
+    setPlanForm({
+      name: plan.name || '',
+      description: plan.description || '',
+      max_plants: plan.max_plants || 1,
+      max_customers_per_plant: plan.max_customers_per_plant || 1000,
+      price_monthly: plan.price_monthly || '',
+      price_yearly: plan.price_yearly || '',
+      billing_model: plan.billing_model || 'per_tenant',
+      features: Array.isArray(plan.features) ? plan.features.join(', ') : (plan.features || ''),
+    });
+    setShowPlanModal(true);
   };
 
   // Get subscription info for each tenant
@@ -125,7 +179,7 @@ export default function Subscriptions() {
             Assign
           </button>
           <button
-            onClick={() => { setPlanForm(EMPTY_PLAN); setShowPlanModal(true); }}
+            onClick={() => { setPlanForm(EMPTY_PLAN); setEditingPlan(null); setShowPlanModal(true); }}
             className="inline-flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
           >
             + Plan
@@ -192,6 +246,14 @@ export default function Subscriptions() {
                           </div>
                         </div>
                       )}
+                      <div className="pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => openEditPlan(plan)}
+                          className="w-full px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                        >
+                          Edit Plan
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -217,6 +279,7 @@ export default function Subscriptions() {
                         <th className="text-left p-4 font-semibold text-gray-600">Status</th>
                         <th className="text-left p-4 font-semibold text-gray-600">Validity</th>
                         <th className="text-left p-4 font-semibold text-gray-600">Plants</th>
+                        <th className="text-left p-4 font-semibold text-gray-600">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -253,6 +316,16 @@ export default function Subscriptions() {
                               {sub ? `${sub.start_date} → ${sub.end_date}` : '—'}
                             </td>
                             <td className="p-4 text-gray-600">{t.plants?.length ?? 0}</td>
+                            <td className="p-4">
+                              {sub && (
+                                <button
+                                  onClick={() => handleEditSub(t)}
+                                  className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
@@ -285,6 +358,14 @@ export default function Subscriptions() {
                             : subStatus === 'expired' ? 'bg-red-50 text-red-600'
                             : 'bg-gray-100 text-gray-500'
                           }`}>{subStatus}</span>
+                          {sub && (
+                            <button
+                              onClick={() => handleEditSub(t)}
+                              className="ml-2 px-2 py-0.5 text-[10px] font-medium text-blue-600 border border-blue-200 rounded hover:bg-blue-50 flex-shrink-0"
+                            >
+                              Edit
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -302,7 +383,7 @@ export default function Subscriptions() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg sm:mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Create Subscription Plan</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{editingPlan ? 'Edit Subscription Plan' : 'Create Subscription Plan'}</h3>
             </div>
             <form onSubmit={handleCreatePlan} className="p-6 space-y-4">
               <div>
@@ -396,7 +477,7 @@ export default function Subscriptions() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowPlanModal(false)}
+                  onClick={() => { setShowPlanModal(false); setEditingPlan(null); }}
                   className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium"
                 >
                   Cancel
@@ -406,7 +487,7 @@ export default function Subscriptions() {
                   disabled={saving}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
                 >
-                  {saving ? 'Creating...' : 'Create Plan'}
+                  {saving ? 'Saving...' : editingPlan ? 'Update Plan' : 'Create Plan'}
                 </button>
               </div>
             </form>
@@ -488,6 +569,85 @@ export default function Subscriptions() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
                 >
                   {saving ? 'Assigning...' : 'Assign Plan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      )}
+
+      {/* Edit Subscription Modal */}
+      {showEditSubModal && editingSub && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md sm:mx-4">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Subscription</h3>
+              <p className="text-sm text-gray-500 mt-1">{editingSub.tenantName}</p>
+            </div>
+            <form onSubmit={handleUpdateSub} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                <select
+                  value={editSubForm.plan_id}
+                  onChange={(e) => setEditSubForm({ ...editSubForm, plan_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                >
+                  <option value="">Select plan</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — &#8377;{parseFloat(p.price_monthly).toLocaleString()}/mo
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={editSubForm.status}
+                  onChange={(e) => setEditSubForm({ ...editSubForm, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="grace">Grace Period</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={editSubForm.start_date}
+                    onChange={(e) => setEditSubForm({ ...editSubForm, start_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={editSubForm.end_date}
+                    onChange={(e) => setEditSubForm({ ...editSubForm, end_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowEditSubModal(false); setEditingSub(null); }}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                >
+                  {saving ? 'Saving...' : 'Update Subscription'}
                 </button>
               </div>
             </form>

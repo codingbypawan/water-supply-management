@@ -9,12 +9,26 @@ const api = axios.create({
   },
 });
 
+// Track if we're already refreshing to prevent concurrent refresh attempts
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  failedQueue = [];
+};
+
 // Request interceptor - add auth token and tenant header
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!config.skipAuth) {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     const tenantId = localStorage.getItem('tenantId');
@@ -33,15 +47,25 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Don't attempt token refresh for auth endpoints (login, refresh, etc.)
+    // Don't attempt token refresh for auth endpoints or skipAuth requests
     const isAuthRequest = originalRequest.url?.includes('/auth/');
+    if (originalRequest.skipAuth || isAuthRequest) {
+      return Promise.reject(error);
+    }
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !isAuthRequest
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue this request until token is refreshed
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -54,15 +78,24 @@ api.interceptors.response.use(
         });
 
         if (data.success) {
-          localStorage.setItem('accessToken', data.data.accessToken);
+          const newToken = data.data.accessToken;
+          localStorage.setItem('accessToken', newToken);
           localStorage.setItem('refreshToken', data.data.refreshToken);
-          originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          processQueue(null, newToken);
           return api(originalRequest);
         }
+        throw new Error('Refresh failed');
       } catch (refreshError) {
-        localStorage.clear();
-        window.location.href = '/login';
+        processQueue(refreshError, null);
+        // Clear auth data and dispatch event for React to handle
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('auth:logout'));
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

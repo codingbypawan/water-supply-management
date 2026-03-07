@@ -9,7 +9,7 @@ const User = sequelize.define('User', {
   },
   tenant_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
   },
   plant_id: {
     type: DataTypes.UUID,
@@ -40,6 +40,10 @@ const User = sequelize.define('User', {
   },
   last_login: {
     type: DataTypes.DATE,
+  },
+  push_subscription: {
+    type: DataTypes.TEXT,
+    comment: 'Web Push subscription JSON',
   },
 }, {
   tableName: 'users',

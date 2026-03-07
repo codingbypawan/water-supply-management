@@ -48,8 +48,10 @@ exports.create = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
   try {
+    const where = { id: req.params.id };
+    if (req.user.role !== 'platform_admin') where.tenant_id = req.user.tenantId;
     const plant = await Plant.findOne({
-      where: { id: req.params.id, tenant_id: req.user.tenantId },
+      where,
       include: [
         { model: PlantConfig, as: 'config' },
         { model: Rate, as: 'rates', where: { status: 'active' }, required: false },
@@ -65,9 +67,9 @@ exports.getById = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const plant = await Plant.findOne({
-      where: { id: req.params.id, tenant_id: req.user.tenantId },
-    });
+    const where = { id: req.params.id };
+    if (req.user.role !== 'platform_admin') where.tenant_id = req.user.tenantId;
+    const plant = await Plant.findOne({ where });
     if (!plant) return ApiResponse.notFound(res, 'Plant not found');
 
     await plant.update(req.body);
@@ -79,9 +81,9 @@ exports.update = async (req, res, next) => {
 
 exports.getConfig = async (req, res, next) => {
   try {
-    const config = await PlantConfig.findOne({
-      where: { plant_id: req.params.id, tenant_id: req.user.tenantId },
-    });
+    const where = { plant_id: req.params.id };
+    if (req.user.role !== 'platform_admin') where.tenant_id = req.user.tenantId;
+    const config = await PlantConfig.findOne({ where });
     if (!config) return ApiResponse.notFound(res, 'Plant config not found');
     return ApiResponse.success(res, config);
   } catch (error) {
@@ -91,13 +93,30 @@ exports.getConfig = async (req, res, next) => {
 
 exports.updateConfig = async (req, res, next) => {
   try {
-    const config = await PlantConfig.findOne({
-      where: { plant_id: req.params.id, tenant_id: req.user.tenantId },
-    });
+    const where = { plant_id: req.params.id };
+    if (req.user.role !== 'platform_admin') where.tenant_id = req.user.tenantId;
+    const config = await PlantConfig.findOne({ where });
     if (!config) return ApiResponse.notFound(res, 'Plant config not found');
 
     await config.update(req.body);
     return ApiResponse.success(res, config, 'Plant config updated');
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.remove = async (req, res, next) => {
+  try {
+    const where = { id: req.params.id };
+    if (req.user.role !== 'platform_admin') {
+      where.tenant_id = req.user.tenantId;
+    }
+    const plant = await Plant.findOne({ where });
+    if (!plant) return ApiResponse.notFound(res, 'Plant not found');
+
+    await PlantConfig.destroy({ where: { plant_id: plant.id } });
+    await plant.destroy();
+    return ApiResponse.success(res, null, 'Plant deleted successfully');
   } catch (error) {
     next(error);
   }

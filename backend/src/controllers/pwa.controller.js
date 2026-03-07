@@ -1,5 +1,6 @@
-const { Tenant, Plant } = require('../models');
+const { Tenant, Plant, User } = require('../models');
 const ApiResponse = require('../utils/response');
+const env = require('../config/environment');
 
 /**
  * Generate a dynamic SVG icon with plant/tenant initial and brand color.
@@ -185,6 +186,53 @@ exports.getIcon = async (req, res, next) => {
     res.set('Content-Type', 'image/svg+xml');
     res.set('Cache-Control', 'public, max-age=86400');
     return res.send(svg);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/pwa/vapid-public-key
+ * Returns the VAPID public key for push subscription
+ */
+exports.getVapidPublicKey = (req, res) => {
+  return ApiResponse.success(res, { publicKey: env.vapid.publicKey });
+};
+
+/**
+ * POST /api/v1/pwa/push-subscribe
+ * Save push subscription for the authenticated user
+ */
+exports.pushSubscribe = async (req, res, next) => {
+  try {
+    const { subscription } = req.body;
+    if (!subscription || !subscription.endpoint) {
+      return ApiResponse.badRequest(res, 'Valid push subscription required');
+    }
+
+    await User.update(
+      { push_subscription: JSON.stringify(subscription) },
+      { where: { id: req.user.id } }
+    );
+
+    return ApiResponse.success(res, null, 'Push subscription saved');
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/pwa/push-unsubscribe
+ * Remove push subscription for the authenticated user
+ */
+exports.pushUnsubscribe = async (req, res, next) => {
+  try {
+    await User.update(
+      { push_subscription: null },
+      { where: { id: req.user.id } }
+    );
+
+    return ApiResponse.success(res, null, 'Push subscription removed');
   } catch (error) {
     next(error);
   }

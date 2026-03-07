@@ -4,14 +4,14 @@ import './styles/globals.css';
 import App from './App';
 import { registerServiceWorker, initInstallPrompt, updateManifest } from './utils/pwa';
 
-// Register service worker for PWA support
-registerServiceWorker();
+// Only register service worker in production to avoid dev server conflicts
+if (process.env.NODE_ENV === 'production') {
+  registerServiceWorker();
+  updateManifest();
+}
 
 // Capture install prompt event early
 initInstallPrompt();
-
-// Set initial dynamic manifest (domain-based)
-updateManifest();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -19,14 +19,9 @@ export default function LoginForm({ onSuccess }) {
       return;
     }
 
-    if (!tenant?.id) {
-      toast.error('Please select a plant first');
-      return;
-    }
-
     setLoading(true);
     try {
-      const result = await login(phone, password, tenant.id, selectedPlant?.id);
+      const result = await login(phone, password, tenant?.id || undefined, selectedPlant?.id || undefined);
       toast.success(`Welcome, ${result.user.name}!`);
       onSuccess?.(result);
     } catch (error) {

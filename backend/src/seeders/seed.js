@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { sequelize, Tenant, TenantConfig, Plant, PlantConfig, User, SubscriptionPlan, TenantSubscription, Rate, Customer } = require('../models');
+const { sequelize, Tenant, TenantConfig, Plant, PlantConfig, User, SubscriptionPlan, TenantSubscription, Rate } = require('../models');
 
 async function seed() {
   try {
@@ -110,156 +110,22 @@ async function seed() {
 
     console.log('✅ Plant created');
 
-    // ── 4. Create Users ──
+    // ── 4. Create Platform Admin ──
     const passwordHash = await bcrypt.hash('admin123', 12);
 
-    // Platform Admin
     await User.create({
-      tenant_id: tenant1.id,
       phone: '9999999999',
       password_hash: passwordHash,
       name: 'Platform Admin',
       role: 'platform_admin',
     });
 
-    // Tenant Admin
-    await User.create({
-      tenant_id: tenant1.id,
-      phone: '9888888888',
-      password_hash: passwordHash,
-      name: 'Jalpani Admin',
-      role: 'tenant_admin',
-    });
-
-    // Plant Admin
-    await User.create({
-      tenant_id: tenant1.id,
-      plant_id: plant1.id,
-      phone: '9777777777',
-      password_hash: passwordHash,
-      name: 'Plant Manager',
-      role: 'plant_admin',
-    });
-
-    console.log('✅ Users created');
-
-    // ── 5. Create Demo Tenant 2: AquaFlow ──
-    const tenant2 = await Tenant.create({
-      name: 'AquaFlow Solutions',
-      slug: 'aquaflow',
-      domain: 'aquaflow.localhost',
-      tagline: 'Water for Everyone',
-      primary_color: '#059669',
-      secondary_color: '#10B981',
-    });
-
-    await TenantConfig.create({
-      tenant_id: tenant2.id,
-      online_payment_enabled: false,
-      allow_event_booking: true,
-    });
-
-    await TenantSubscription.create({
-      tenant_id: tenant2.id,
-      plan_id: basicPlan.id,
-      start_date: '2026-01-01',
-      end_date: '2026-12-31',
-      status: 'active',
-    });
-
-    const plant2 = await Plant.create({
-      tenant_id: tenant2.id,
-      name: 'AquaFlow Central',
-      address: '456 Stream Ave, Delhi',
-      phone: '9666666666',
-      primary_color: '#059669',
-      secondary_color: '#10B981',
-    });
-
-    await PlantConfig.create({
-      tenant_id: tenant2.id,
-      plant_id: plant2.id,
-      distribution_type: 'container',
-    });
-
-    await Rate.create({
-      tenant_id: tenant2.id,
-      plant_id: plant2.id,
-      rate_per_unit: 25.00,
-      unit_type: 'container',
-      effective_from: '2026-01-01',
-      status: 'active',
-    });
-
-    const passwordHash2 = await bcrypt.hash('admin123', 12);
-    await User.create({
-      tenant_id: tenant2.id,
-      phone: '9555555555',
-      password_hash: passwordHash2,
-      name: 'AquaFlow Admin',
-      role: 'tenant_admin',
-    });
-
-    await User.create({
-      tenant_id: tenant2.id,
-      plant_id: plant2.id,
-      phone: '9444444444',
-      password_hash: passwordHash2,
-      name: 'AquaFlow Plant Manager',
-      role: 'plant_admin',
-    });
-
-    console.log('✅ Tenant "AquaFlow" created');
-
-    // ── 6. Create sample customers with login accounts ──
-    const sampleCustomers = [
-      { name: 'Rahul Sharma', phone: '9111111111', address: 'Block A, Sector 12' },
-      { name: 'Priya Patel', phone: '9111111112', address: 'Block B, Sector 15' },
-      { name: 'Amit Kumar', phone: '9111111113', address: 'Block C, Sector 8' },
-      { name: 'Sneha Gupta', phone: '9111111114', address: 'Block D, Sector 20' },
-      { name: 'Vikram Singh', phone: '9111111115', address: 'Block E, Sector 5' },
-    ];
-
-    for (const cust of sampleCustomers) {
-      // Create User account with role 'customer' and password = phone
-      const custPasswordHash = await bcrypt.hash(cust.phone, 12);
-      const custUser = await User.create({
-        tenant_id: tenant1.id,
-        plant_id: plant1.id,
-        phone: cust.phone,
-        password_hash: custPasswordHash,
-        name: cust.name,
-        role: 'customer',
-      });
-
-      await Customer.create({
-        tenant_id: tenant1.id,
-        plant_id: plant1.id,
-        ...cust,
-        user_id: custUser.id,
-        default_container_count: Math.floor(Math.random() * 3) + 1,
-        outstanding_balance: Math.floor(Math.random() * 500) + 100,
-      });
-    }
-
-    console.log('✅ Sample customers created');
+    console.log('✅ Platform Admin created');
 
     console.log('\n🎉 Seed completed successfully!');
     console.log('\n📋 Login Credentials:');
     console.log('─────────────────────────────');
     console.log('Platform Admin:  9999999999 / admin123');
-    console.log('Tenant Admin:    9888888888 / admin123');
-    console.log('Plant Admin:     9777777777 / admin123');
-    console.log('AquaFlow Admin:  9555555555 / admin123');
-    console.log('AquaFlow Plant:  9444444444 / admin123');
-    console.log('─────────────────────────────');
-    console.log('\n📋 Customer Logins (password = phone):');
-    console.log('─────────────────────────────');
-    console.log('Rahul Sharma:    9111111111 / 9111111111');
-    console.log('Priya Patel:     9111111112 / 9111111112');
-    console.log('Amit Kumar:      9111111113 / 9111111113');
-    console.log('Sneha Gupta:     9111111114 / 9111111114');
-    console.log('Vikram Singh:    9111111115 / 9111111115');
     console.log('─────────────────────────────\n');
 
     process.exit(0);

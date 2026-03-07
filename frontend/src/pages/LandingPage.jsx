@@ -207,7 +207,7 @@ export default function LandingPage() {
 
       {/* ─── Event Booking Form ─── */}
       <div id="book-event" className="max-w-4xl mx-auto w-full px-6 py-10">
-        <EventBookingForm primaryColor={primaryColor} />
+        <EventBookingForm primaryColor={primaryColor} tenantId={tenant?.id} plantId={plant?.id} />
       </div>
 
       {/* ─── Footer ─── */}
@@ -222,7 +222,7 @@ export default function LandingPage() {
 }
 
 /* ─── Event Booking Form ─── */
-function EventBookingForm({ primaryColor }) {
+function EventBookingForm({ primaryColor, tenantId, plantId }) {
   const [form, setForm] = useState({ name: '', phone: '', address: '', event_date: '', event_type: 'wedding', notes: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -235,7 +235,12 @@ function EventBookingForm({ primaryColor }) {
     }
     setSubmitting(true);
     try {
-      const res = await api.post('/events/public-book', form);
+      const params = {};
+      if (plantId) params.plantId = plantId;
+      const res = await api.post('/events/public-book', form, {
+        headers: tenantId ? { 'X-Tenant-ID': tenantId } : {},
+        params,
+      });
       toast.success(res.data?.message || 'Booking submitted!');
       setSubmitted(true);
       setForm({ name: '', phone: '', address: '', event_date: '', event_type: 'wedding', notes: '' });

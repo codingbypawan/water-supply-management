@@ -13,7 +13,7 @@ exports.list = async (req, res, next) => {
     if (customerId) where.customer_id = customerId;
     if (method) where.payment_method = method;
     if (startDate && endDate) {
-      where.payment_date = { [Op.between]: [startDate, endDate] };
+      where.payment_date = { [Op.between]: [`${startDate}T00:00:00`, `${endDate}T23:59:59`] };
     }
 
     const { count, rows } = await Payment.findAndCountAll({
@@ -37,13 +37,28 @@ exports.create = async (req, res, next) => {
     const plantId = req.user.plantId;
     if (!plantId) return ApiResponse.badRequest(res, 'Plant context required');
 
-    const { customer_id, amount, payment_method, payment_type, distribution_id, event_id, transaction_ref } = req.body;
+    const { customer_id, amount, payment_method, payment_type, distribution_id, event_id, transaction_ref, collected_by } = req.body;
 
     // Validate customer
     const customer = await Customer.findOne({
       where: { id: customer_id, tenant_id: req.user.tenantId },
     });
     if (!customer) return ApiResponse.notFound(res, 'Customer not found');
+
+    // Determine who collected the payment
+    let collectorId = req.user.id;
+    if (collected_by && collected_by !== req.user.id) {
+      // Admin can attribute payment to an employee
+      const { ROLES } = require('../utils/constants');
+      if ([ROLES.PLANT_ADMIN, ROLES.TENANT_ADMIN, ROLES.PLATFORM_ADMIN].includes(req.user.role)) {
+        const { User } = require('../models');
+        const collector = await User.findOne({
+          where: { id: collected_by, tenant_id: req.user.tenantId, status: 'active' },
+        });
+        if (!collector) return ApiResponse.badRequest(res, 'Invalid collector');
+        collectorId = collected_by;
+      }
+    }
 
     const payment = await Payment.create({
       tenant_id: req.user.tenantId,
@@ -55,7 +70,7 @@ exports.create = async (req, res, next) => {
       distribution_id,
       event_id,
       transaction_ref,
-      collected_by: req.user.id,
+      collected_by: collectorId,
       status: 'completed',
       payment_date: new Date(),
     });

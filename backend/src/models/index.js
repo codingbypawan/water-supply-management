@@ -18,6 +18,7 @@ const AuditLog = require('./AuditLog');
 const Notification = require('./Notification');
 const EmployeeSettlement = require('./EmployeeSettlement');
 const SalaryPayment = require('./SalaryPayment');
+const Attendance = require('./Attendance');
 
 // ── Tenant associations ──
 Tenant.hasMany(Plant, { foreignKey: 'tenant_id', as: 'plants' });
@@ -55,13 +56,19 @@ Customer.belongsTo(Plant, { foreignKey: 'plant_id', as: 'plant' });
 Customer.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Customer.hasMany(Distribution, { foreignKey: 'customer_id', as: 'distributions' });
 Customer.hasMany(Payment, { foreignKey: 'customer_id', as: 'payments' });
-Customer.hasMany(Event, { foreignKey: 'customer_id', as: 'events' });
+Customer.hasMany(Event, { foreignKey: { name: 'customer_id', allowNull: true }, as: 'events', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 
 // ── Employee associations ──
 Employee.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
 Employee.belongsTo(Plant, { foreignKey: 'plant_id', as: 'plant' });
 Employee.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Employee.hasMany(Salary, { foreignKey: 'employee_id', as: 'salaries' });
+Employee.hasMany(Attendance, { foreignKey: 'employee_id', as: 'attendance' });
+
+// ── Attendance associations ──
+Attendance.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' });
+Attendance.belongsTo(User, { foreignKey: 'marked_by', as: 'markedByUser' });
+Attendance.belongsTo(Plant, { foreignKey: 'plant_id', as: 'plant' });
 
 // ── Distribution associations ──
 Distribution.belongsTo(Customer, { foreignKey: 'customer_id', as: 'customer' });
@@ -75,7 +82,7 @@ Payment.belongsTo(Plant, { foreignKey: 'plant_id', as: 'plant' });
 Payment.belongsTo(User, { foreignKey: 'collected_by', as: 'collector' });
 
 // ── Event associations ──
-Event.belongsTo(Customer, { foreignKey: 'customer_id', as: 'customer' });
+Event.belongsTo(Customer, { foreignKey: { name: 'customer_id', allowNull: true }, as: 'customer', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Event.belongsTo(Plant, { foreignKey: 'plant_id', as: 'plant' });
 
 // ── Salary associations ──
@@ -117,4 +124,5 @@ module.exports = {
   Notification,
   EmployeeSettlement,
   SalaryPayment,
+  Attendance,
 };

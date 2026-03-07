@@ -1,27 +1,29 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../api/axios';
-import { useTenant } from './TenantContext';
+import { subscribeToPush, unsubscribeFromPush } from '../utils/pwa';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      localStorage.clear();
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
-  const { resetTenant } = useTenant();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.clear();
-      }
+    if (user && process.env.NODE_ENV === 'production') {
+      subscribeToPush().catch(() => {});
     }
     setLoading(false);
   }, []);
 
-  const login = async (phone, password, tenantId, plantId) => {
+  const login = useCallback(async (phone, password, tenantId, plantId) => {
     const { data } = await api.post('/auth/login', {
       phone,
       password,
@@ -38,30 +40,53 @@ export function AuthProvider({ children }) {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('tenantId', userData.tenantId);
+    if (userData.tenantId) localStorage.setItem('tenantId', userData.tenantId);
 
     if (tenant) localStorage.setItem('tenant', JSON.stringify(tenant));
     if (plant) localStorage.setItem('plant', JSON.stringify(plant));
 
     setUser(userData);
+
+    // Subscribe to push notifications after login
+    if (process.env.NODE_ENV === 'production') {
+      subscribeToPush().catch(() => {});
+    }
+
     return { user: userData, tenant, plant };
-  };
+  }, []);
 
   const logout = useCallback(async () => {
+    try {
+      await unsubscribeFromPush();
+    } catch {}
     try {
       await api.post('/auth/logout');
     } catch {
       // Ignore errors during logout
     }
-    localStorage.clear();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     setUser(null);
-    resetTenant();
-  }, [resetTenant]);
+  }, []);
+
+  // Listen for forced logout from axios interceptor (token refresh failure)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null);
+    };
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, []);
 
   const isAuthenticated = !!user;
 
+  const contextValue = useMemo(() => ({
+    user, login, logout, loading, isAuthenticated,
+  }), [user, login, logout, loading, isAuthenticated]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

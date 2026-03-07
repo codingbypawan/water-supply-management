@@ -14,5 +14,6 @@ router.get('/:id/config', plantController.getConfig);
 router.post('/', requireRole(ROLES.TENANT_ADMIN, ROLES.PLATFORM_ADMIN), plantController.create);
 router.put('/:id', requireRole(ROLES.TENANT_ADMIN, ROLES.PLANT_ADMIN), plantController.update);
 router.put('/:id/config', requireRole(ROLES.TENANT_ADMIN, ROLES.PLANT_ADMIN), plantController.updateConfig);
+router.delete('/:id', requireRole(ROLES.TENANT_ADMIN, ROLES.PLATFORM_ADMIN), plantController.remove);
 
 module.exports = router;

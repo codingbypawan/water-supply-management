@@ -15,6 +15,7 @@ router.use('/subscriptions', require('./subscription.routes'));
 router.use('/reports', require('./report.routes'));
 router.use('/employee-reports', require('./employeeReport.routes'));
 router.use('/rates', require('./rate.routes'));
+router.use('/attendance', require('./attendance.routes'));
 router.use('/customer-portal', require('./customerPortal.routes'));
 
 module.exports = router;
