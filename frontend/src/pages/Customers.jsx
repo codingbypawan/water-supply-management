@@ -148,13 +148,21 @@ export default function Customers() {
                 )}
               </div>
             </div>
-            <div className="text-right flex-shrink-0 ml-3">
-              <p className={`font-semibold text-sm ${Number(row.outstanding_balance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                ₹{Number(row.outstanding_balance || 0).toLocaleString()}
-              </p>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                row.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-              }`}>{row.status}</span>
+            <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); setRateCustomer(row); }}
+                className="px-2 py-1 text-xs bg-yellow-50 text-yellow-700 rounded-md border border-yellow-200"
+              >
+                Rate
+              </button>
+              <div className="text-right">
+                <p className={`font-semibold text-sm ${Number(row.outstanding_balance) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  ₹{Number(row.outstanding_balance || 0).toLocaleString()}
+                </p>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  row.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>{row.status}</span>
+              </div>
             </div>
           </div>
         )}
