@@ -182,10 +182,11 @@ function PlantDashboard({ user }) {
   const loadDashboard = async () => {
     setLoading(true);
     try {
+      const today = new Date().toISOString().slice(0, 10);
       const [custRes, distRes, collectRes, outRes, empRes] = await Promise.allSettled([
         api.get('/customers?limit=1'),
         api.get('/reports/daily-distribution'),
-        api.get('/reports/collection'),
+        api.get(`/reports/collection?startDate=${today}&endDate=${today}`),
         api.get('/reports/outstanding'),
         api.get('/employee-reports/summary'),
       ]);
